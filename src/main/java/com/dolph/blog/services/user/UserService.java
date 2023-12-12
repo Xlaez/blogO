@@ -1,5 +1,6 @@
 package com.dolph.blog.services.user;
 
+import com.dolph.blog.helpers.OtpGenerator;
 import com.dolph.blog.models.User;
 import com.dolph.blog.repository.UserRepo;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
@@ -30,10 +31,15 @@ public class UserService {
 
     public String createUser(com.dolph.blog.dto.user.NewUserRequest newUserRequest){
        try{
-           User user = User.builder().fullname(newUserRequest.getFullname())
-                   .bio(newUserRequest.getBio()).email(newUserRequest.getEmail())
-                   .password(hashPassword(newUserRequest.getPassword())).createdAt(getTimestamp()).updatedAt(getTimestamp())
+           User user = User.builder()
+                   .fullname(newUserRequest.getFullname())
+                   .bio(newUserRequest.getBio())
+                   .email(newUserRequest.getEmail())
+                   .password(hashPassword(newUserRequest.getPassword()))
+                   .createdAt(getTimestamp())
+                   .updatedAt(getTimestamp())
                    .build();
+           user.setOtp(OtpGenerator.newOtp());
            this.userRepo.save(user);
            return user.getId();
        }catch(Exception e){

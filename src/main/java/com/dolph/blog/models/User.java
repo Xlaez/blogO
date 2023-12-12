@@ -22,7 +22,8 @@ public class User {
     private String pics;
     private String email;
     private String password;
-
+    private String otp;
+    private String otpExpiry;
     private String createdAt;
     private String updatedAt;
 }

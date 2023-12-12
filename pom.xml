@@ -65,13 +65,10 @@
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.12.3</version>
 		</dependency>
-
-		<!--		<dependency>-->
-<!--			<groupId>org.junit</groupId>-->
-<!--			<artifactId>junit-bom</artifactId>-->
-<!--			<version>5.10.1</version> &lt;!&ndash; or the latest version available &ndash;&gt;-->
-<!--&lt;!&ndash;			<scope>test</scope>&ndash;&gt;-->
-<!--		</dependency>-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
 
 	</dependencies>
 
