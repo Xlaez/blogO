@@ -17,7 +17,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception{
-       httpSecurity.authorizeHttpRequests((auth) -> auth.requestMatchers("/auth/**")
+       httpSecurity.authorizeHttpRequests((auth) -> auth.requestMatchers("/v1/**")
                        .permitAll().anyRequest().authenticated())
                .addFilterAfter(new JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class).
                csrf(AbstractHttpConfigurer::disable).
@@ -25,8 +25,8 @@ public class SecurityConfig {
        return httpSecurity.build();
     }
 
-//    @Bean
-//    public WebSecurityCustomizer webSecurityCustomizer(){
-//        return (web) -> web.ignoring().requestMatchers("/docs/**");
-//    }
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer(){
+        return (web) -> web.ignoring().requestMatchers("/auth/**");
+    }
 }
