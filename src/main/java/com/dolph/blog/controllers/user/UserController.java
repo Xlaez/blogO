@@ -5,6 +5,7 @@ import com.dolph.blog.dto.user.ResponseBody;
 import com.dolph.blog.helpers.OtpGenerator;
 import com.dolph.blog.helpers.PasswordValidator;
 import com.dolph.blog.helpers.TimestampUtil;
+import com.dolph.blog.interfaces.UserProjection;
 import com.dolph.blog.models.User;
 import com.dolph.blog.services.TokenService;
 import com.dolph.blog.services.UserService;
@@ -16,6 +17,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -240,5 +242,38 @@ public class UserController {
            response.setMessage(e.getMessage());
            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
        }
+    }
+
+    // TODO: refresh tokens
+
+    @GetMapping
+    @RequestMapping("/users/1/{userId}")
+    public ResponseEntity<ResponseBody> getUserByID (@PathVariable String userId,
+                                                     @AuthenticationPrincipal String id){
+     try{
+         ResponseBody response = new ResponseBody();
+         UserProjection user = userService.getUserByIdProjection(userId);
+
+         if(user.getEmail().isEmpty()){
+             response.setStatus("failure");
+             response.setMessage("cannot fetch user data");
+             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+         }
+
+         Map<String, Object> userDoc = new HashMap<>();
+
+         userDoc.put("user", user);
+
+         response.setStatus("success");
+         response.setBody(userDoc);
+         return new ResponseEntity<>(response, HttpStatus.OK);
+
+     }catch (Exception e){
+         log.error("Error getting user data: {}", e.getMessage());
+         ResponseBody response = new ResponseBody();
+         response.setStatus("error");
+         response.setMessage(e.getMessage());
+         return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+     }
     }
 }
