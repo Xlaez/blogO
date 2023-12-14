@@ -24,7 +24,8 @@ public class User {
     private String password;
     private String otp;
     private String otpExpiry;
+    private boolean isEmailVerified;
+
     private String createdAt;
     private String updatedAt;
-    private boolean isEmailVerified;
 }

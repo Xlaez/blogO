@@ -1,27 +1,30 @@
 package com.dolph.blog.services.user;
 
-import com.dolph.blog.helpers.OtpGenerator;
 import com.dolph.blog.helpers.TimestampUtil;
 import com.dolph.blog.models.User;
 import com.dolph.blog.repository.UserRepo;
 import com.dolph.blog.utils.EmailSender;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class UserService {
     private final UserRepo userRepo;
+    private final MongoTemplate mongoTemplate;
 
     @Autowired
     private EmailSender emailSender;
-    public UserService(UserRepo userRepo){
+    public UserService(UserRepo userRepo, MongoTemplate mongoTemplate){
         this.userRepo = userRepo;
+        this.mongoTemplate = mongoTemplate;
     }
 
     public String hashPassword(String text){
@@ -30,23 +33,24 @@ public class UserService {
     }
 
     public String createUser(com.dolph.blog.dto.user.NewUserRequest newUserRequest){
-       try{
-           User user = User.builder()
-                   .fullname(newUserRequest.getFullname())
-                   .bio(newUserRequest.getBio())
-                   .email(newUserRequest.getEmail())
-                   .password(hashPassword(newUserRequest.getPassword()))
-                   .otp(newUserRequest.getOtp())
-                   .otpExpiry(newUserRequest.getOtpExpiry())
-                   .isEmailVerified(false)
-                   .createdAt(TimestampUtil.getTimestamp())
-                   .updatedAt(TimestampUtil.getTimestamp())
-                   .build();
-           this.userRepo.save(user);
-           return user.getId();
-       }catch(Exception e){
-           throw e;
-       }
+        User user = User.builder()
+                .fullname(newUserRequest.getFullname())
+                .bio(newUserRequest.getBio())
+                .email(newUserRequest.getEmail())
+                .password(hashPassword(newUserRequest.getPassword()))
+                .otp(newUserRequest.getOtp())
+                .otpExpiry(newUserRequest.getOtpExpiry())
+                .isEmailVerified(false)
+                .createdAt(TimestampUtil.getTimestamp())
+                .updatedAt(TimestampUtil.getTimestamp())
+                .build();
+        this.userRepo.save(user);
+        return user.getId();
+    }
+
+    public Optional<User> getUserByEmail(String email){
+        User user = mongoTemplate.findOne(new Query(Criteria.where("email").is(email)), User.class);
+        return Optional.ofNullable(user);
     }
 
     public void sendEmail(String recipient, String subject, Map<String, Object> variables) throws MessagingException {

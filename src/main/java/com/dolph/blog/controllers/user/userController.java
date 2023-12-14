@@ -5,6 +5,7 @@ import com.dolph.blog.dto.user.ResponseBody;
 import com.dolph.blog.helpers.OtpGenerator;
 import com.dolph.blog.helpers.PasswordValidator;
 import com.dolph.blog.helpers.TimestampUtil;
+import com.dolph.blog.models.User;
 import com.dolph.blog.services.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -26,11 +28,17 @@ public class userController {
     @RequestMapping("/auth/register")
     public ResponseEntity<ResponseBody> createUser(@RequestBody NewUserRequest newUserRequest){
         try{
-
-            // TODO: check if user exists
-            boolean isPasswordValid = PasswordValidator.isValidPassword(newUserRequest.getPassword());
-
             ResponseBody response = new ResponseBody();
+
+            Optional<User> user = userService.getUserByEmail(newUserRequest.getEmail());
+
+            if(user.isPresent()){
+                response.setStatus("failure");
+                response.setMessage("user already exists, try singing in");
+                return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+            }
+
+            boolean isPasswordValid = PasswordValidator.isValidPassword(newUserRequest.getPassword());
 
             if(!isPasswordValid) {
                 response.setStatus("failure");
