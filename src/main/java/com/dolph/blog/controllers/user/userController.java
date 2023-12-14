@@ -1,5 +1,6 @@
 package com.dolph.blog.controllers.user;
 
+import com.dolph.blog.dto.user.LoginUserRequest;
 import com.dolph.blog.dto.user.NewUserRequest;
 import com.dolph.blog.dto.user.ResponseBody;
 import com.dolph.blog.dto.user.VerifyOtpRequest;
@@ -7,7 +8,8 @@ import com.dolph.blog.helpers.OtpGenerator;
 import com.dolph.blog.helpers.PasswordValidator;
 import com.dolph.blog.helpers.TimestampUtil;
 import com.dolph.blog.models.User;
-import com.dolph.blog.services.user.UserService;
+import com.dolph.blog.services.TokenService;
+import com.dolph.blog.services.UserService;
 import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class userController {
     private final UserService userService;
+
+    private final TokenService tokenService;
 
     @PostMapping
     @RequestMapping("/auth/register")
@@ -123,10 +127,12 @@ public class userController {
                         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
                     }
 
+                    Map<String ,Object> tokens = tokenService.generateAuthTokens(userDoc.getId());
+
                     response.setStatus("success");
                     response.setMessage("email verified successfully");
-//                    response.setBody();
-//                    TODO: return auth tokens
+                    response.setBody(tokens);
+
                     return new ResponseEntity<>(response, HttpStatus.OK);
 
                 }else{
@@ -144,4 +150,10 @@ public class userController {
             return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+//
+//    @PostMapping
+//    @RequestMapping("/auth/login")
+//    public ResponseEntity<ResponseBody> login(@RequestBody LoginUserRequest request){
+//
+//    }
 }

@@ -1,4 +1,4 @@
-package com.dolph.blog.services.user;
+package com.dolph.blog.services;
 
 import com.dolph.blog.helpers.TimestampUtil;
 import com.dolph.blog.models.User;
