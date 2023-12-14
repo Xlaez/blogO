@@ -276,4 +276,48 @@ public class UserController {
          return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
      }
     }
+
+    @PutMapping
+    @RequestMapping("/users/update")
+    public ResponseEntity<ResponseBody> updateUser (@AuthenticationPrincipal String id,
+                                                    @RequestBody UpdateUserRequest request){
+        try{
+            ResponseBody response = new ResponseBody();
+            UserProjection user = userService.getUserByIdProjection(id);
+
+            if(user.getEmail().isEmpty()){
+                response.setStatus("failure");
+                response.setMessage("user not found");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+            Query query =  new Query(Criteria.where("_id").is(user.getId()));
+            Update update = new Update();
+
+            if(!request.getBio().isEmpty()){
+                update.set("bio", request.getBio());
+            }
+
+            if(!request.getTwitter().isEmpty()){
+                update.set("twitter", request.getTwitter());
+            }
+
+            if(userService.updateUser(query, update).getModifiedCount() == 0){
+                response.setStatus("failure");
+                response.setMessage("cannot update user data");
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            response.setStatus("success");
+            response.setMessage("user data updated");
+            return new ResponseEntity<>(response, HttpStatus.OK);
+
+        }catch (Exception e){
+            log.error("Error getting user data: ", e);
+            ResponseBody response = new ResponseBody();
+            response.setStatus("error");
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

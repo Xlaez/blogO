@@ -37,7 +37,7 @@ public class JwtUtil {
 
     public static Date getExpirationTime(String token){
         try {
-            Jws<Claims> jws = Jwts.parser().setSigningKey(SECRET_KEY).setAllowedClockSkewSeconds(300).build().parseSignedClaims(token);
+            Jws<Claims> jws = Jwts.parser().setSigningKey(SECRET_KEY).build().parseSignedClaims(token);
             Claims claims = jws.getPayload();
 
             return claims.getExpiration();

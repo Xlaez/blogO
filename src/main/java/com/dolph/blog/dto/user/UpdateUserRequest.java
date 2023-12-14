@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class LogoutUserRequest {
-    private String token;
+public class UpdateUserRequest {
+    private String bio;
+    private String twitter;
 }
