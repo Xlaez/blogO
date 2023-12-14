@@ -36,6 +36,11 @@ public class UserService {
         return encoder.encode(text);
     }
 
+    public boolean comparePassword(String text, String hashedPassword){
+        Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+        return  encoder.matches(text, hashedPassword);
+    }
+
     public String createUser(com.dolph.blog.dto.user.NewUserRequest newUserRequest){
         User user = User.builder()
                 .fullname(newUserRequest.getFullname())

@@ -1,9 +1,7 @@
 package com.dolph.blog.controllers.user;
 
-import com.dolph.blog.dto.user.NewUserRequest;
+import com.dolph.blog.dto.user.*;
 import com.dolph.blog.dto.user.ResponseBody;
-import com.dolph.blog.dto.user.TokenRequest;
-import com.dolph.blog.dto.user.VerifyOtpRequest;
 import com.dolph.blog.helpers.OtpGenerator;
 import com.dolph.blog.helpers.PasswordValidator;
 import com.dolph.blog.helpers.TimestampUtil;
@@ -161,10 +159,64 @@ public class UserController {
             return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-//
-//    @PostMapping
-//    @RequestMapping("/auth/login")
-//    public ResponseEntity<ResponseBody> login(@RequestBody LoginUserRequest request){
-//
-//    }
+
+    @PostMapping
+    @RequestMapping("/auth/login")
+    public ResponseEntity<ResponseBody> login (@RequestBody LoginUserRequest request){
+        try{
+            ResponseBody response = new ResponseBody();
+
+            Optional<User> user = userService.getUserByEmail(request.getEmail());
+
+            if(user.isPresent()) {
+                if(!PasswordValidator.isValidPassword(request.getPassword())){
+                    response.setStatus("failure");
+                    response.setMessage("password is invalid, it should be at least 6 characters and should be alphanumeric");
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
+
+                if(!user.get().isEmailVerified()){
+                    response.setStatus("failure");
+                    response.setMessage("verify your email to continue");
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
+
+                if(!userService.comparePassword(request.getPassword(), user.get().getPassword())){
+                    response.setStatus("failure");
+                    response.setMessage("login credentials incorrect");
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
+
+                Map<String, Map<String , Object>> tokens = tokenService.generateAuthTokens(user.get().getId());
+
+                TokenRequest tokenRequest = new TokenRequest();
+                tokenRequest.setUserId(user.get().getId());
+                tokenRequest.setToken(tokens.get("refreshToken").get("token").toString());
+                tokenRequest.setExpires(tokens.get("refreshToken").get("expires").toString());
+                tokenService.saveToken(tokenRequest);
+
+                Map<String, Object> returnData = new HashMap<>();
+
+                returnData.put("user", userService.mapUserToUserDTO(user.get()));
+                returnData.put("tokens", tokens);
+
+                response.setStatus("success");
+                response.setMessage("");
+                response.setBody(returnData);
+
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
+
+            response.setStatus("failure");
+            response.setMessage("login credentials incorrect");
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+
+        }catch (Exception e){
+            log.error("Error signing user in: {}", e.getMessage());
+            ResponseBody response = new ResponseBody();
+            response.setStatus("error");
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
