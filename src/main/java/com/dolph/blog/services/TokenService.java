@@ -2,9 +2,13 @@ package com.dolph.blog.services;
 
 import com.dolph.blog.helpers.TimestampUtil;
 import com.dolph.blog.models.Token;
+import com.dolph.blog.models.User;
 import com.dolph.blog.repository.TokenRepo;
 import com.dolph.blog.utils.JwtUtil;
+import com.mongodb.client.result.DeleteResult;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -52,5 +56,10 @@ public class TokenService {
         tokens.put("refreshToken", refreshTokenDoc);
 
         return tokens;
+    }
+
+    public DeleteResult deleteToken(String refreshToken){
+        Query query = new Query(Criteria.where("token").is(refreshToken));
+        return mongoTemplate.remove(query, Token.class);
     }
 }

@@ -219,4 +219,26 @@ public class UserController {
             return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @PostMapping
+    @RequestMapping("/auth/logout/{token}")
+    public ResponseEntity<ResponseBody> logout (@PathVariable String token){
+       try{
+           ResponseBody response = new ResponseBody();
+           if(tokenService.deleteToken(token).getDeletedCount() == 0){
+               response.setStatus("failure");
+               response.setMessage("error signing user out");
+               return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+           }
+
+           response.setStatus("success");
+           return new ResponseEntity<>(response, HttpStatus.OK);
+       }catch (Exception e){
+           log.error("Error signing user out: {}", e.getMessage());
+           ResponseBody response = new ResponseBody();
+           response.setStatus("error");
+           response.setMessage(e.getMessage());
+           return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+       }
+    }
 }
