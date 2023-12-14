@@ -4,11 +4,13 @@ import com.dolph.blog.helpers.TimestampUtil;
 import com.dolph.blog.models.User;
 import com.dolph.blog.repository.UserRepo;
 import com.dolph.blog.utils.EmailSender;
+import com.mongodb.client.result.UpdateResult;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -51,6 +53,10 @@ public class UserService {
     public Optional<User> getUserByEmail(String email){
         User user = mongoTemplate.findOne(new Query(Criteria.where("email").is(email)), User.class);
         return Optional.ofNullable(user);
+    }
+
+    public UpdateResult updateUser(Query query, Update update){
+        return mongoTemplate.updateFirst(query, update, User.class);
     }
 
     public void sendEmail(String recipient, String subject, Map<String, Object> variables) throws MessagingException {

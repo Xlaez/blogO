@@ -1,5 +1,7 @@
 package com.dolph.blog.helpers;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Random;
 
 public class OtpGenerator {
@@ -16,5 +18,14 @@ public class OtpGenerator {
         String otp = String.format("%05d", otpValue);
 
         return otp;
+    }
+
+    public static  final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    public static boolean isOtpValid(String otpExpiry){
+        LocalDateTime expiryTime = LocalDateTime.parse(otpExpiry, formatter);
+        LocalDateTime currentTime = LocalDateTime.now();
+
+        return !currentTime.isAfter(expiryTime);
     }
 }
