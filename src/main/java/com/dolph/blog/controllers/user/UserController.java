@@ -1,8 +1,8 @@
 package com.dolph.blog.controllers.user;
 
-import com.dolph.blog.dto.user.LoginUserRequest;
 import com.dolph.blog.dto.user.NewUserRequest;
 import com.dolph.blog.dto.user.ResponseBody;
+import com.dolph.blog.dto.user.TokenRequest;
 import com.dolph.blog.dto.user.VerifyOtpRequest;
 import com.dolph.blog.helpers.OtpGenerator;
 import com.dolph.blog.helpers.PasswordValidator;
@@ -28,7 +28,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/v1")
 @RequiredArgsConstructor
-public class userController {
+public class UserController {
     private final UserService userService;
 
     private final TokenService tokenService;
@@ -127,11 +127,22 @@ public class userController {
                         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
                     }
 
-                    Map<String ,Object> tokens = tokenService.generateAuthTokens(userDoc.getId());
+                    Map<String, Map<String , Object>> tokens = tokenService.generateAuthTokens(userDoc.getId());
+
+                    TokenRequest tokenRequest = new TokenRequest();
+                    tokenRequest.setUserId(userDoc.getId());
+                    tokenRequest.setToken(tokens.get("refreshToken").get("token").toString());
+                    tokenRequest.setExpires(tokens.get("refreshToken").get("expires").toString());
+                    tokenService.saveToken(tokenRequest);
+
+                    Map<String, Object> returnData = new HashMap<>();
+
+                    returnData.put("user", userService.mapUserToUserDTO(userDoc));
+                    returnData.put("tokens", tokens);
 
                     response.setStatus("success");
                     response.setMessage("email verified successfully");
-                    response.setBody(tokens);
+                    response.setBody(returnData);
 
                     return new ResponseEntity<>(response, HttpStatus.OK);
 

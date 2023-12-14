@@ -34,11 +34,11 @@ public class TokenService {
         return token.getExpires();
     }
 
-    public Map<String, Object> generateAuthTokens(String userId) {
+    public Map<String, Map<String , Object>> generateAuthTokens(String userId) {
         String accessToken = JwtUtil.buildToken(userId, "access");
         String refreshToken = JwtUtil.buildToken(userId, "refresh");
 
-        Map<String, Object> tokens = new HashMap<>();
+        Map<String, Map<String , Object>> tokens = new HashMap<>();
 
         Map<String, Object> accessTokenDoc =  new HashMap<>();
         accessTokenDoc.put("token", accessToken);
@@ -48,8 +48,8 @@ public class TokenService {
         refreshTokenDoc.put("token", refreshToken);
         refreshTokenDoc.put("expires", JwtUtil.getExpirationTime(refreshToken));
 
-        tokens.put("access", accessTokenDoc);
-        tokens.put("refresh", refreshTokenDoc);
+        tokens.put("accessToken", accessTokenDoc);
+        tokens.put("refreshToken", refreshTokenDoc);
 
         return tokens;
     }

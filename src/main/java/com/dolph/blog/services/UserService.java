@@ -1,6 +1,8 @@
 package com.dolph.blog.services;
 
+import com.dolph.blog.dto.user.UserDataResponse;
 import com.dolph.blog.helpers.TimestampUtil;
+import com.dolph.blog.interfaces.UserProjection;
 import com.dolph.blog.models.User;
 import com.dolph.blog.repository.UserRepo;
 import com.dolph.blog.utils.EmailSender;
@@ -55,11 +57,32 @@ public class UserService {
         return Optional.ofNullable(user);
     }
 
+    public UserProjection getUserByEmailProjection(String email){
+        return userRepo.findUserProjectionByEmail(email);
+    }
+
+    public UserProjection getUserByIdProjection(String id){
+        return userRepo.findUserProjectionById(id);
+    }
+
     public UpdateResult updateUser(Query query, Update update){
         return mongoTemplate.updateFirst(query, update, User.class);
     }
 
     public void sendEmail(String recipient, String subject, Map<String, Object> variables) throws MessagingException {
         emailSender.sendEmail(recipient, subject, variables);
+    }
+
+    public UserDataResponse mapUserToUserDTO(User user) {
+        UserDataResponse userDTO = new UserDataResponse();
+        userDTO.setId(user.getId());
+        userDTO.setFullname(user.getFullname());
+        userDTO.setBio(user.getBio());
+        userDTO.setTwitter(user.getTwitter());
+        userDTO.setPics(user.getPics());
+        userDTO.setEmail(user.getEmail());
+        userDTO.setCreatedAt(user.getCreatedAt());
+        userDTO.setEmailVerified(user.isEmailVerified());
+        return userDTO;
     }
 }
