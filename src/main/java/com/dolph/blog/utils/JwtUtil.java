@@ -7,10 +7,10 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import java.util.Date;
 
 public class JwtUtil {
-    private static final String SECRET_KEY = "very-secret-key-000-111"; // move ot env
-    private static final long ACCESS_EXPIRATION_TIME = 86400000; // move to env - 24hrs in milliseconds
+    private static final String SECRET_KEY = "very-secret-key-000-111"; // move to application.properties
+    private static final long ACCESS_EXPIRATION_TIME = 86400000; // move to application.properties - 24hrs in milliseconds
 
-    private static final long REFRESH_EXPIRATION_TIME = 604800000; // move to env - 24hrs in milliseconds
+    private static final long REFRESH_EXPIRATION_TIME = 604800000; // move to application.properties - 24hrs in milliseconds
 
     public static String buildToken(String id, String type) throws Exception {
         if (!type.equals("refresh") || !type.equals("access")){

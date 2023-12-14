@@ -26,4 +26,5 @@ public class User {
     private String otpExpiry;
     private String createdAt;
     private String updatedAt;
+    private boolean isEmailVerified;
 }

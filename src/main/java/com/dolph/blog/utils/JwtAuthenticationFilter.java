@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         tokens = new HashMap<>();
         String bearerToken = request.getHeader("x-auth-token");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-             tokens.put("access_token", bearerToken.substring(7));
+            tokens.put("access_token", bearerToken.substring(7));
         }
         String refreshToken = request.getHeader("x-refresh-token");
         if(refreshToken !=null && refreshToken.startsWith("Refresh ")){

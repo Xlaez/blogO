@@ -17,4 +17,6 @@ public class NewUserRequest {
     private String bio;
     private String email;
     private String password;
+    private String otp;
+    private String otpExpiry;
 }

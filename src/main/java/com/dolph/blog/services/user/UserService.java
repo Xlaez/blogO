@@ -1,32 +1,32 @@
 package com.dolph.blog.services.user;
 
 import com.dolph.blog.helpers.OtpGenerator;
+import com.dolph.blog.helpers.TimestampUtil;
 import com.dolph.blog.models.User;
 import com.dolph.blog.repository.UserRepo;
+import com.dolph.blog.utils.EmailSender;
+import jakarta.mail.MessagingException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 @Service
 public class UserService {
     private final UserRepo userRepo;
 
+    @Autowired
+    private EmailSender emailSender;
     public UserService(UserRepo userRepo){
         this.userRepo = userRepo;
     }
 
-    public String getTimestamp(){
-        LocalDateTime currentDateTime = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        return currentDateTime.format(formatter);
-    }
-
     public String hashPassword(String text){
         Argon2PasswordEncoder encoder = Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
-        String result = encoder.encode(text);
-        return result;
+        return encoder.encode(text);
     }
 
     public String createUser(com.dolph.blog.dto.user.NewUserRequest newUserRequest){
@@ -36,14 +36,20 @@ public class UserService {
                    .bio(newUserRequest.getBio())
                    .email(newUserRequest.getEmail())
                    .password(hashPassword(newUserRequest.getPassword()))
-                   .createdAt(getTimestamp())
-                   .updatedAt(getTimestamp())
+                   .otp(newUserRequest.getOtp())
+                   .otpExpiry(newUserRequest.getOtpExpiry())
+                   .isEmailVerified(false)
+                   .createdAt(TimestampUtil.getTimestamp())
+                   .updatedAt(TimestampUtil.getTimestamp())
                    .build();
-           user.setOtp(OtpGenerator.newOtp());
            this.userRepo.save(user);
            return user.getId();
        }catch(Exception e){
            throw e;
        }
+    }
+
+    public void sendEmail(String recipient, String subject, Map<String, Object> variables) throws MessagingException {
+        emailSender.sendEmail(recipient, subject, variables);
     }
 }
