@@ -9,6 +9,7 @@ import com.dolph.blog.interfaces.UserProjection;
 import com.dolph.blog.models.User;
 import com.dolph.blog.services.TokenService;
 import com.dolph.blog.services.UserService;
+import com.dolph.blog.utils.ApiResponse;
 import com.dolph.blog.utils.ErrorHandler;
 import com.dolph.blog.utils.FileUploader;
 import com.mongodb.client.result.UpdateResult;
@@ -40,23 +41,21 @@ public class UserController {
     @PostMapping
     @RequestMapping("/auth/register")
     public ResponseEntity<ResponseBody> createUser(@RequestBody NewUserRequest newUserRequest){
-        try{
-            ResponseBody response = new ResponseBody();
+        ApiResponse response = new ApiResponse();
 
+        try{
             Optional<User> user = userService.getUserByEmail(newUserRequest.getEmail());
 
             if(user.isPresent()){
-                response.setStatus("failure");
-                response.setMessage("user already exists, try singing in");
-                return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+               ResponseBody r = response.failureResponse("user already exists, try singing in", null);
+                return new ResponseEntity<>(r,HttpStatus.BAD_REQUEST);
             }
 
             boolean isPasswordValid = PasswordValidator.isValidPassword(newUserRequest.getPassword());
 
             if(!isPasswordValid) {
-                response.setStatus("failure");
-                response.setMessage("password must be alphanumeric and at least 6 characters long");
-                return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+                ResponseBody r = response.failureResponse("password must be alphanumeric and at least 6 characters long", null);
+                return new ResponseEntity<>(r,HttpStatus.BAD_REQUEST);
             }
 
             String otp = OtpGenerator.newOtp();
@@ -67,8 +66,8 @@ public class UserController {
 
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("userId", id);
-            response.setStatus("success");
-            response.setBody(responseBody);
+
+            ResponseBody r = response.successResponse("", responseBody);
 
             Map<String, Object> variables = new HashMap<>();
 
@@ -79,39 +78,36 @@ public class UserController {
 
             userService.sendEmail(newUserRequest.getEmail(), "Verify Email", variables );
 
-            return new ResponseEntity<>(response,HttpStatus.CREATED);
+            return new ResponseEntity<>(r,HttpStatus.CREATED);
 
         }catch (Exception e){
-            ResponseBody response =  ErrorHandler.catchHandler(e, "Error creating user: {} ");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody r =response.catchHandler(e, "Error creating user: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping
     @RequestMapping("/auth/verify-otp")
     public ResponseEntity<ResponseBody> verifyEmail(@RequestBody VerifyOtpRequest request){
-        try{
-            ResponseBody response = new ResponseBody();
+        ApiResponse response = new ApiResponse();
 
+        try{
             Optional<User> user = userService.getUserByEmail(request.getEmail());
 
             if(user.isEmpty()){
-                response.setStatus("failure");
-                response.setMessage("user does not exists, try singing in");
-                return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+                ResponseBody r = response.failureResponse("user does not exists, try singing in", null);
+                return new ResponseEntity<>(r,HttpStatus.BAD_REQUEST);
             }else {
                 User userDoc = user.get();
                 if(userDoc.isEmailVerified()){
-                    response.setStatus("failure");
-                    response.setMessage("this account's email has been verified already");
-                    return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+                    ResponseBody r =response.failureResponse("this account's email has been verified already", null);
+                    return new ResponseEntity<>(r,HttpStatus.BAD_REQUEST);
                 }
 
                 if(OtpGenerator.isOtpValid(userDoc.getOtpExpiry())){
                     if(!userDoc.getOtp().equals(request.getOtp())){
-                        response.setStatus("failure");
-                        response.setMessage("otp is not valid. try requesting for another");
-                        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                        ResponseBody r =response.failureResponse("otp is not valid. try requesting for another", null);
+                        return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
                     }
 
                     Query query =  new Query(Criteria.where("email").is(request.getEmail()));
@@ -123,9 +119,8 @@ public class UserController {
                     UpdateResult updatedUser = userService.updateUser(query, update);
 
                     if(updatedUser.getModifiedCount() == 0){
-                        response.setStatus("failure");
-                        response.setMessage("an error occurred, could not update user");
-                        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                        ResponseBody r =response.failureResponse("an error occurred, could not update user", null);
+                        return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
                     }
 
                     Map<String, Map<String , Object>> tokens = tokenService.generateAuthTokens(userDoc.getId());
@@ -141,50 +136,44 @@ public class UserController {
                     returnData.put("user", userService.mapUserToUserDTO(userDoc));
                     returnData.put("tokens", tokens);
 
-                    response.setStatus("success");
-                    response.setMessage("email verified successfully");
-                    response.setBody(returnData);
-
-                    return new ResponseEntity<>(response, HttpStatus.OK);
+                    ResponseBody r = response.successResponse("email verified successfully", returnData);
+                    return new ResponseEntity<>(r, HttpStatus.OK);
 
                 }else{
-                    response.setStatus("failure");
-                    response.setMessage("otp has expired. try requesting for another");
-                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                    ResponseBody r =response.failureResponse("otp has expired. try requesting for another", null);
+                    return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
                 }
             }
 
         }catch (Exception e){
-            ResponseBody response =  ErrorHandler.catchHandler(e, "Error verifying otp: {} ");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody r = response.catchHandler(e, "Error verifying otp: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping
     @RequestMapping("/auth/login")
     public ResponseEntity<ResponseBody> login (@RequestBody LoginUserRequest request){
-        try{
-            ResponseBody response = new ResponseBody();
+        ApiResponse response = new ApiResponse();
 
+        try{
             Optional<User> user = userService.getUserByEmail(request.getEmail());
 
             if(user.isPresent()) {
                 if(!PasswordValidator.isValidPassword(request.getPassword())){
-                    response.setStatus("failure");
-                    response.setMessage("password is invalid, it should be at least 6 characters and should be alphanumeric");
-                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                    ResponseBody r = response.failureResponse(
+                            "password is invalid, it should be at least 6 characters and should be alphanumeric", null);
+                    return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
                 }
 
                 if(!user.get().isEmailVerified()){
-                    response.setStatus("failure");
-                    response.setMessage("verify your email to continue");
-                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                    ResponseBody r = response.failureResponse("verify your email to continue", null);
+                    return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
                 }
 
                 if(!userService.comparePassword(request.getPassword(), user.get().getPassword())){
-                    response.setStatus("failure");
-                    response.setMessage("login credentials incorrect");
-                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                    ResponseBody r =response.failureResponse("login credentials incorrect", null);
+                    return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
                 }
 
                 Map<String, Map<String , Object>> tokens = tokenService.generateAuthTokens(user.get().getId());
@@ -200,69 +189,62 @@ public class UserController {
                 returnData.put("user", userService.mapUserToUserDTO(user.get()));
                 returnData.put("tokens", tokens);
 
-                response.setStatus("success");
-                response.setMessage("");
-                response.setBody(returnData);
-
-                return new ResponseEntity<>(response, HttpStatus.OK);
+                ResponseBody r = response.successResponse("", returnData);
+                return new ResponseEntity<>(r, HttpStatus.OK);
             }
 
-            response.setStatus("failure");
-            response.setMessage("login credentials incorrect");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            ResponseBody r =  response.failureResponse("login credentials incorrect", null);
+            return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
 
         }catch (Exception e){
-            ResponseBody response =  ErrorHandler.catchHandler(e, "Error signing user in: ");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody r =  response.catchHandler(e, "Error signing user in: ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping
     @RequestMapping("/auth/logout/{token}")
     public ResponseEntity<ResponseBody> logout (@PathVariable String token){
+        ApiResponse response = new ApiResponse();
+
        try{
-           ResponseBody response = new ResponseBody();
            if(tokenService.deleteToken(token).getDeletedCount() == 0){
-               response.setStatus("failure");
-               response.setMessage("error signing user out");
-               return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+               ResponseBody r =response.failureResponse("error signing user out", null);
+               return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
            }
 
-           response.setStatus("success");
-           return new ResponseEntity<>(response, HttpStatus.OK);
+           ResponseBody r =response.successResponse("",null);
+           return new ResponseEntity<>(r, HttpStatus.OK);
        }catch (Exception e){
-           ResponseBody response =  ErrorHandler.catchHandler(e, "Error signing user out: {} ");
-           return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+           ResponseBody r = response.catchHandler(e, "Error signing user out: {} ");
+           return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
        }
     }
-
-    // TODO: refresh tokens
 
     @GetMapping
     @RequestMapping("/users/1/{userId}")
     public ResponseEntity<ResponseBody> getUserByID (@PathVariable String userId,
                                                      @AuthenticationPrincipal String id){
+        ApiResponse response = new ApiResponse();
+
      try{
-         ResponseBody response = new ResponseBody();
          UserProjection user = userService.getUserByIdProjection(userId);
 
          if(user == null){
-             response.setStatus("failure");
-             response.setMessage("cannot fetch user data");
-             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+             ResponseBody r = response.failureResponse("cannot fetch user data", null);
+             return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
          }
 
          Map<String, Object> userDoc = new HashMap<>();
 
          userDoc.put("user", user);
 
-         response.setStatus("success");
-         response.setBody(userDoc);
-         return new ResponseEntity<>(response, HttpStatus.OK);
+         ResponseBody r =  response.successResponse("", userDoc);
+         return new ResponseEntity<>(r, HttpStatus.OK);
 
      }catch (Exception e){
-         ResponseBody response =  ErrorHandler.catchHandler(e, "Error getting user data: {} ");
-         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+         ResponseBody r = response.catchHandler(e, "Error getting user data: {} ");
+         return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
      }
     }
 
@@ -270,14 +252,14 @@ public class UserController {
     @RequestMapping("/users/update")
     public ResponseEntity<ResponseBody> updateUser (@AuthenticationPrincipal String id,
                                                     @RequestBody UpdateUserRequest request){
+        ApiResponse response = new ApiResponse();
+
         try{
-            ResponseBody response = new ResponseBody();
             UserProjection user = userService.getUserByIdProjection(id);
 
             if(user == null){
-                response.setStatus("failure");
-                response.setMessage("user not found");
-                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+                ResponseBody r = response.failureResponse("user not found", null);
+                return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
             }
 
             Query query =  new Query(Criteria.where("_id").is(user.getId()));
@@ -292,47 +274,43 @@ public class UserController {
             }
 
             if(userService.updateUser(query, update).getModifiedCount() == 0){
-                response.setStatus("failure");
-                response.setMessage("cannot update user data");
-                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+                ResponseBody r =response.failureResponse("cannot update user data", null);
+                return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            response.setStatus("success");
-            response.setMessage("user data updated");
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            ResponseBody r =response.successResponse("user data updated",null);
+            return new ResponseEntity<>(r, HttpStatus.OK);
 
         }catch (Exception e){
-            ResponseBody response =  ErrorHandler.catchHandler(e, "Error updating user data: {} ");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody r =response.catchHandler(e, "Error updating user data: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @DeleteMapping
     @RequestMapping("/users/1")
     public ResponseEntity<ResponseBody> deleteUser(@AuthenticationPrincipal String id){
+        ApiResponse response = new ApiResponse();
+
       try{
-          ResponseBody response = new ResponseBody();
           UserProjection user = userService.getUserByIdProjection(id);
 
           if(user == null){
-              response.setStatus("failure");
-              response.setMessage("user not found");
-              return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+              ResponseBody r = response.failureResponse("user not found", null);
+              return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
           }
 
           if(userService.deleteUserById(user.getId()) == 0){
-              response.setStatus("failure");
-              response.setMessage("failed to delete user data");
-              return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+              ResponseBody r =response.failureResponse("failed to delete user data", null);
+              return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
           }
 
-          response.setStatus("success");
-          response.setMessage("user deleted");
-          return new ResponseEntity<>(response, HttpStatus.OK);
+          ResponseBody r = response.successResponse("user deleted", null);
+          return new ResponseEntity<>(r, HttpStatus.OK);
 
       }catch(Exception e){
-          ResponseBody response =  ErrorHandler.catchHandler(e, "Error deleting user : {} ");
-          return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+          ResponseBody r =response.catchHandler(e, "Error deleting user : {} ");
+          return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
 
@@ -340,17 +318,16 @@ public class UserController {
     @RequestMapping("/users")
     public ResponseEntity<ResponseBody> getUsers(@RequestParam() int page,
                                                  @RequestParam() int limit){
-        try{
-            ResponseBody response = new ResponseBody();
+        ApiResponse response = new ApiResponse();
 
+        try{
             Page<User> users = userService.fetchUsers(page, limit);
 
             List<User> userList = users.getContent();
 
             if(userList.isEmpty()){
-                response.setStatus("failure");
-                response.setMessage("there are no users yet");
-                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+                ResponseBody r =response.failureResponse("there are no users yet", null);
+                return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
             }
 
             List<UserDataResponse> userDocuments = new ArrayList<>();
@@ -369,14 +346,12 @@ public class UserController {
             returnDoc.put("hasNextPage", nextPage);
             returnDoc.put("docs", userDocuments);
 
-            response.setStatus("success");
-            response.setMessage("fetched " + users.getNumberOfElements() + " successfully");
-            response.setBody(returnDoc);
+            ResponseBody r =response.successResponse("fetched " + users.getNumberOfElements() + " successfully", returnDoc);
 
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            return new ResponseEntity<>(r, HttpStatus.OK);
         }catch(Exception e){
-            ResponseBody response =  ErrorHandler.catchHandler(e, "Error getting users: {} ");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody r =response.catchHandler(e, "Error getting users: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -384,8 +359,10 @@ public class UserController {
     @RequestMapping("/users/update/pic")
     public ResponseEntity<ResponseBody> updatePic(@AuthenticationPrincipal String id,
                                                   @RequestParam("upload")MultipartFile upload){
+        ApiResponse response = new ApiResponse();
+
         try{
-            ResponseBody response = new ResponseBody();
+
             String fileUrl = fileUploader.uploadFile(upload);
 
             Query query =  new Query(Criteria.where("_id").is(id));
@@ -394,18 +371,16 @@ public class UserController {
             update.set("pics", fileUrl);
 
             if(userService.updateUser(query, update).getModifiedCount() == 0){
-                response.setStatus("failure");
-                response.setMessage("cannot update user data");
-                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+                ResponseBody r = response.failureResponse("cannot update user data", null);
+                return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            response.setStatus("success");
-            response.setMessage("user pic updated");
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            ResponseBody r = response.successResponse("user pic updated", null);
+            return new ResponseEntity<>(r, HttpStatus.OK);
 
         }catch (Exception e){
-          ResponseBody response =  ErrorHandler.catchHandler(e, "Error updating user pics: {} ");
-          return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody r =response.catchHandler(e, "Error updating user pics: {} ");
+          return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
