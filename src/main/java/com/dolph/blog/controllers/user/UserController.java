@@ -10,7 +10,6 @@ import com.dolph.blog.models.User;
 import com.dolph.blog.services.TokenService;
 import com.dolph.blog.services.UserService;
 import com.dolph.blog.utils.ApiResponse;
-import com.dolph.blog.utils.ErrorHandler;
 import com.dolph.blog.utils.FileUploader;
 import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
@@ -426,7 +425,7 @@ public class UserController {
             ResponseBody r = response.failureResponse("user password updated", null);
             return new ResponseEntity<>(r, HttpStatus.OK);
 
-        }catch (Exception e){
+        }catch (Exception e) {
             ResponseBody r = response.catchHandler(e, "Error updating user password: {} ");
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
