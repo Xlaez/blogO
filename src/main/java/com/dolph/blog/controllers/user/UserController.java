@@ -12,6 +12,7 @@ import com.dolph.blog.services.UserService;
 import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -20,9 +21,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.lang.reflect.Array;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -254,7 +254,7 @@ public class UserController {
          ResponseBody response = new ResponseBody();
          UserProjection user = userService.getUserByIdProjection(userId);
 
-         if(user.getEmail().isEmpty()){
+         if(user == null){
              response.setStatus("failure");
              response.setMessage("cannot fetch user data");
              return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
@@ -285,7 +285,7 @@ public class UserController {
             ResponseBody response = new ResponseBody();
             UserProjection user = userService.getUserByIdProjection(id);
 
-            if(user.getEmail().isEmpty()){
+            if(user == null){
                 response.setStatus("failure");
                 response.setMessage("user not found");
                 return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
@@ -320,6 +320,85 @@ public class UserController {
             return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @DeleteMapping
+    @RequestMapping("/users/1")
+    public ResponseEntity<ResponseBody> deleteUser(@AuthenticationPrincipal String id){
+      try{
+          ResponseBody response = new ResponseBody();
+          UserProjection user = userService.getUserByIdProjection(id);
+
+          if(user == null){
+              response.setStatus("failure");
+              response.setMessage("user not found");
+              return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+          }
+
+          if(userService.deleteUserById(user.getId()) == 0){
+              response.setStatus("failure");
+              response.setMessage("failed to delete user data");
+              return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+
+          response.setStatus("success");
+          response.setMessage("user deleted");
+          return new ResponseEntity<>(response, HttpStatus.OK);
+
+      }catch(Exception e){
+          log.error("Error getting user data: ", e);
+          ResponseBody response = new ResponseBody();
+          response.setStatus("error");
+          response.setMessage(e.getMessage());
+          return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+
+    @GetMapping
+    @RequestMapping("/users")
+    public ResponseEntity<ResponseBody> getUsers(@RequestParam() int page,
+                                                 @RequestParam() int limit){
+        try{
+            ResponseBody response = new ResponseBody();
+
+            Page<User> users = userService.fetchUsers(page, limit);
+
+            List<User> userList = users.getContent();
+
+            if(userList.isEmpty()){
+                response.setStatus("failure");
+                response.setMessage("there are no users yet");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+            List<UserDataResponse> userDocuments = new ArrayList<>();
+            for (User user: userList) {
+                userDocuments.add(userService.mapUserToUserDTO(user));
+            }
+
+            long totalUsers = users.getTotalElements();
+            int totalPages =users.getTotalPages();
+            boolean nextPage = users.hasNext();
+
+            Map<String, Object> returnDoc = new HashMap<>();
+
+            returnDoc.put("totalDocs", totalUsers);
+            returnDoc.put("totalPages", totalPages);
+            returnDoc.put("hasNextPage", nextPage);
+            returnDoc.put("docs", userDocuments);
+
+            response.setStatus("success");
+            response.setMessage("fetched " + users.getNumberOfElements() + " successfully");
+            response.setBody(returnDoc);
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch(Exception e){
+            log.error("Error getting user data: ", e);
+            ResponseBody response = new ResponseBody();
+            response.setStatus("error");
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
 
-//TODO: delete user account, refresh tokens, reset password, change email, upload pics
+//TODO: refresh tokens, reset password, change email, upload pics

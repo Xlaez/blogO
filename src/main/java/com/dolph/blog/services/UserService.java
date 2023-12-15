@@ -3,12 +3,16 @@ package com.dolph.blog.services;
 import com.dolph.blog.dto.user.UserDataResponse;
 import com.dolph.blog.helpers.TimestampUtil;
 import com.dolph.blog.interfaces.UserProjection;
+import com.dolph.blog.models.Token;
 import com.dolph.blog.models.User;
 import com.dolph.blog.repository.UserRepo;
 import com.dolph.blog.utils.EmailSender;
 import com.mongodb.client.result.UpdateResult;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -62,6 +66,11 @@ public class UserService {
         return Optional.ofNullable(user);
     }
 
+    public long deleteUserById(String userId){
+        Query query = new Query(Criteria.where("_id").is(userId));
+        return mongoTemplate.remove(query, User.class).getDeletedCount();
+    }
+
     public UserProjection getUserByEmailProjection(String email){
         return userRepo.findUserProjectionByEmail(email);
     }
@@ -72,6 +81,11 @@ public class UserService {
 
     public UpdateResult updateUser(Query query, Update update){
         return mongoTemplate.updateFirst(query, update, User.class);
+    }
+
+    public Page<User> fetchUsers(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        return userRepo.findAll(pageable);
     }
 
     public void sendEmail(String recipient, String subject, Map<String, Object> variables) throws MessagingException {
