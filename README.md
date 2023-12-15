@@ -13,3 +13,8 @@ These are the current fields:
 - spring.mail.properties.mail.smtp.starttls.enable=true
 - spring.mail.host= smtp host
 - spring.mail.port= smtp port
+- spring.cloudinary.name=name
+- spring.cloudinary.apiSecret=apisecret
+- spring.cloudinary.apiKey=apikey
+- spring.servlet.multipart.max-file-size=3MB
+- spring.servlet.multipart.max-request-size=2MB

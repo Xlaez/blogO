@@ -9,6 +9,7 @@ import com.dolph.blog.interfaces.UserProjection;
 import com.dolph.blog.models.User;
 import com.dolph.blog.services.TokenService;
 import com.dolph.blog.services.UserService;
+import com.dolph.blog.utils.FileUploader;
 import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 @Slf4j
@@ -29,6 +30,8 @@ import java.util.*;
 @RequestMapping("/v1")
 @RequiredArgsConstructor
 public class UserController {
+
+    private final FileUploader fileUploader;
     private final UserService userService;
 
     private final TokenService tokenService;
@@ -393,6 +396,38 @@ public class UserController {
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch(Exception e){
             log.error("Error getting user data: ", e);
+            ResponseBody response = new ResponseBody();
+            response.setStatus("error");
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping
+    @RequestMapping("/users/update/pic")
+    public ResponseEntity<ResponseBody> updatePic(@AuthenticationPrincipal String id,
+                                                  @RequestParam("upload")MultipartFile upload){
+        try{
+            ResponseBody response = new ResponseBody();
+            String fileUrl = fileUploader.uploadFile(upload);
+
+            Query query =  new Query(Criteria.where("_id").is(id));
+            Update update = new Update();
+
+            update.set("pics", fileUrl);
+
+            if(userService.updateUser(query, update).getModifiedCount() == 0){
+                response.setStatus("failure");
+                response.setMessage("cannot update user data");
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            response.setStatus("success");
+            response.setMessage("user pic updated");
+            return new ResponseEntity<>(response, HttpStatus.OK);
+
+        }catch (Exception e){
+            log.error("Error updating user pics: ", e);
             ResponseBody response = new ResponseBody();
             response.setStatus("error");
             response.setMessage(e.getMessage());
