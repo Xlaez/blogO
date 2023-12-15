@@ -53,12 +53,12 @@ public class PostService {
         return Optional.ofNullable(post);
     }
 
-    public long deletePostId(String id){
+    public long deletePos(String id){
         Query query = new Query(Criteria.where("_id").is(id));
         return mongoTemplate.remove(query, Post.class).getDeletedCount();
     }
 
-    public UpdateResult deletePost(Query query, Update update){
+    public UpdateResult updatePost(Query query, Update update){
         return mongoTemplate.updateFirst(query, update, Post.class);
     }
 
