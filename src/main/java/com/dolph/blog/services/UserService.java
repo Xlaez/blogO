@@ -66,6 +66,11 @@ public class UserService {
         return Optional.ofNullable(user);
     }
 
+    public Optional<User> getUserById(String id){
+        User user = mongoTemplate.findOne(new Query(Criteria.where("_id").is(id)), User.class);
+        return Optional.ofNullable(user);
+    }
+
     public long deleteUserById(String userId){
         Query query = new Query(Criteria.where("_id").is(userId));
         return mongoTemplate.remove(query, User.class).getDeletedCount();
