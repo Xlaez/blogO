@@ -9,6 +9,7 @@ import com.dolph.blog.interfaces.UserProjection;
 import com.dolph.blog.models.User;
 import com.dolph.blog.services.TokenService;
 import com.dolph.blog.services.UserService;
+import com.dolph.blog.utils.ErrorHandler;
 import com.dolph.blog.utils.FileUploader;
 import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
@@ -81,11 +82,8 @@ public class UserController {
             return new ResponseEntity<>(response,HttpStatus.CREATED);
 
         }catch (Exception e){
-            log.error("Error creating user: {}", e.getMessage());
-            ResponseBody response = new ResponseBody();
-            response.setStatus("error");
-            response.setMessage(e.getMessage());
-            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody response =  ErrorHandler.catchHandler(e, "Error creating user: {} ");
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -157,11 +155,8 @@ public class UserController {
             }
 
         }catch (Exception e){
-            log.error("Error verifying otp: {}", e.getMessage());
-            ResponseBody response = new ResponseBody();
-            response.setStatus("error");
-            response.setMessage(e.getMessage());
-            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody response =  ErrorHandler.catchHandler(e, "Error verifying otp: {} ");
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -217,11 +212,8 @@ public class UserController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 
         }catch (Exception e){
-            log.error("Error signing user in: {}", e.getMessage());
-            ResponseBody response = new ResponseBody();
-            response.setStatus("error");
-            response.setMessage(e.getMessage());
-            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody response =  ErrorHandler.catchHandler(e, "Error signing user in: ");
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -239,11 +231,8 @@ public class UserController {
            response.setStatus("success");
            return new ResponseEntity<>(response, HttpStatus.OK);
        }catch (Exception e){
-           log.error("Error signing user out: {}", e.getMessage());
-           ResponseBody response = new ResponseBody();
-           response.setStatus("error");
-           response.setMessage(e.getMessage());
-           return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+           ResponseBody response =  ErrorHandler.catchHandler(e, "Error signing user out: {} ");
+           return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
        }
     }
 
@@ -272,11 +261,8 @@ public class UserController {
          return new ResponseEntity<>(response, HttpStatus.OK);
 
      }catch (Exception e){
-         log.error("Error getting user data: {}", e.getMessage());
-         ResponseBody response = new ResponseBody();
-         response.setStatus("error");
-         response.setMessage(e.getMessage());
-         return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+         ResponseBody response =  ErrorHandler.catchHandler(e, "Error getting user data: {} ");
+         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
      }
     }
 
@@ -316,11 +302,8 @@ public class UserController {
             return new ResponseEntity<>(response, HttpStatus.OK);
 
         }catch (Exception e){
-            log.error("Error getting user data: ", e);
-            ResponseBody response = new ResponseBody();
-            response.setStatus("error");
-            response.setMessage(e.getMessage());
-            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody response =  ErrorHandler.catchHandler(e, "Error updating user data: {} ");
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -348,11 +331,8 @@ public class UserController {
           return new ResponseEntity<>(response, HttpStatus.OK);
 
       }catch(Exception e){
-          log.error("Error getting user data: ", e);
-          ResponseBody response = new ResponseBody();
-          response.setStatus("error");
-          response.setMessage(e.getMessage());
-          return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+          ResponseBody response =  ErrorHandler.catchHandler(e, "Error deleting user : {} ");
+          return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
 
@@ -395,11 +375,8 @@ public class UserController {
 
             return new ResponseEntity<>(response, HttpStatus.OK);
         }catch(Exception e){
-            log.error("Error getting user data: ", e);
-            ResponseBody response = new ResponseBody();
-            response.setStatus("error");
-            response.setMessage(e.getMessage());
-            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseBody response =  ErrorHandler.catchHandler(e, "Error getting users: {} ");
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -427,13 +404,10 @@ public class UserController {
             return new ResponseEntity<>(response, HttpStatus.OK);
 
         }catch (Exception e){
-            log.error("Error updating user pics: ", e);
-            ResponseBody response = new ResponseBody();
-            response.setStatus("error");
-            response.setMessage(e.getMessage());
-            return new ResponseEntity<>(response,HttpStatus.INTERNAL_SERVER_ERROR);
+          ResponseBody response =  ErrorHandler.catchHandler(e, "Error updating user pics: {} ");
+          return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
 
-//TODO: refresh tokens, reset password, change email, upload pics
+//TODO: refresh tokens, reset password, change email
