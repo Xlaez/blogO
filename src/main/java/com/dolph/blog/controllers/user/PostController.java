@@ -1,6 +1,7 @@
 package com.dolph.blog.controllers.user;
 
 import com.dolph.blog.dto.post.NewPostRequest;
+import com.dolph.blog.dto.post.PostDataResponse;
 import com.dolph.blog.dto.post.UpdatePostRequest;
 import com.dolph.blog.dto.user.ResponseBody;
 import com.dolph.blog.helpers.TimestampUtil;
@@ -9,6 +10,7 @@ import com.dolph.blog.services.PostService;
 import com.dolph.blog.utils.ApiResponse;
 import com.dolph.blog.utils.FileUploader;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -18,9 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 
 @RestController
@@ -130,6 +130,43 @@ public class PostController {
     }
 
     @GetMapping
+    @RequestMapping("/author/{author_id}")
+    public ResponseEntity<ResponseBody> getPostByAuthorId(@PathVariable("author_id") String id,
+                                                          @RequestParam() int limit,
+                                                          @RequestParam() int page){
+        ApiResponse response = new ApiResponse();
+
+        try{
+            Page<Post> posts = postService.fetchUserPosts(id, page, limit);
+
+            List<Post> postList = posts.getContent();
+
+            if(postList.isEmpty()){
+                ResponseBody r =response.failureResponse("cannot retrieve author's posts", null);
+                return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
+            }
+
+            Map<String, Object> returnDoc = new HashMap<>();
+
+            long totalPosts = posts.getTotalElements();
+            int totalPages = posts.getTotalPages();
+            boolean nextPage = posts.hasNext();
+
+            returnDoc.put("totalDocs", totalPosts);
+            returnDoc.put("totalPages", totalPages);
+            returnDoc.put("hasNextPage", nextPage);
+            returnDoc.put("docs", postList);
+
+            ResponseBody r =response.successResponse("author's posts fetched",returnDoc);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+
+        }catch(Exception e){
+            ResponseBody r = response.catchHandler(e, "Error updating post: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping
     @RequestMapping("/")
     public ResponseEntity<ResponseBody> getPostById(@RequestParam() String id){
         ApiResponse response = new ApiResponse();
@@ -163,3 +200,5 @@ public class PostController {
         }
     }
 }
+
+// Todo: create likes, comments and develop swagger docs then deploy
