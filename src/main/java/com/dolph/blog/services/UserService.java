@@ -3,7 +3,6 @@ package com.dolph.blog.services;
 import com.dolph.blog.dto.user.UserDataResponse;
 import com.dolph.blog.helpers.TimestampUtil;
 import com.dolph.blog.interfaces.UserProjection;
-import com.dolph.blog.models.Token;
 import com.dolph.blog.models.User;
 import com.dolph.blog.repository.UserRepo;
 import com.dolph.blog.utils.EmailSender;
