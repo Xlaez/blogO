@@ -128,4 +128,38 @@ public class PostController {
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping
+    @RequestMapping("/")
+    public ResponseEntity<ResponseBody> getPostById(@RequestParam() String id){
+        ApiResponse response = new ApiResponse();
+        try{
+
+            Optional<Post> post = postService.getPostById(id);
+
+            if(post.isEmpty()){
+                ResponseBody r =response.failureResponse("cannot find post", null);
+                return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
+            }
+
+            Map<String, Object> updatedPost = new HashMap<>();
+
+            updatedPost.put("id", post.get().getId());
+            updatedPost.put("authorId", post.get().getAuthorId());
+            updatedPost.put("title", post.get().getTitle());
+            updatedPost.put("descr", post.get().getDescr());
+            updatedPost.put("img", post.get().getImg());
+            updatedPost.put("category", post.get().getCategory());
+            updatedPost.put("content", post.get().getContent());
+            updatedPost.put("updatedAt", post.get().getUpdatedAt());
+            updatedPost.put("createdAt", post.get().getCreatedAt());
+
+            ResponseBody r =response.successResponse("post fetched",updatedPost);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+
+        }catch (Exception e){
+            ResponseBody r = response.catchHandler(e, "Error retrieving post: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
