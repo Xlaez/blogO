@@ -380,9 +380,57 @@ public class UserController {
 
         }catch (Exception e){
             ResponseBody r =response.catchHandler(e, "Error updating user pics: {} ");
-          return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping
+    @RequestMapping("/users/update/password")
+    public ResponseEntity<ResponseBody> updatePassword(@AuthenticationPrincipal String id,
+                                                  @RequestBody UpdatePasswordRequest request){
+        ApiResponse response = new ApiResponse();
+        try{
+            Optional<User> user = userService.getUserById(id);
+
+            if(user.isEmpty()){
+                ResponseBody r = response.failureResponse("user not found", null);
+                return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
+            }
+
+            if(!PasswordValidator.isValidPassword(request.getNewPassword())){
+                ResponseBody r = response.failureResponse(
+                        "password must be at least 6 characters and alphanumeric", null);
+                return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
+            }
+
+            if(!userService.comparePassword(request.getOldPassword(), user.get().getPassword())){
+                ResponseBody r = response.failureResponse("password does not match", null);
+                return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
+            }
+
+            if(userService.comparePassword(request.getNewPassword(), user.get().getPassword())){
+                ResponseBody r = response.failureResponse("new password cannot be the same as old password",null);
+                return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
+            }
+
+            Query query =  new Query(Criteria.where("_id").is(id));
+            Update update = new Update();
+
+            update.set("password", userService.hashPassword(request.getNewPassword()));
+
+            if(userService.updateUser(query, update).getModifiedCount() == 0){
+                ResponseBody r = response.failureResponse("cannot update user data", null);
+                return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            ResponseBody r = response.failureResponse("user password updated", null);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+
+        }catch (Exception e){
+            ResponseBody r = response.catchHandler(e, "Error updating user password: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
 
-//TODO: refresh tokens, reset password, change email
+//TODO: refresh tokens, change email
