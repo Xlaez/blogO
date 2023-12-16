@@ -1,14 +1,17 @@
 package com.dolph.blog.controllers.user;
 
 import com.dolph.blog.dto.post.NewPostRequest;
-import com.dolph.blog.dto.post.PostDataResponse;
 import com.dolph.blog.dto.post.UpdatePostRequest;
 import com.dolph.blog.dto.user.ResponseBody;
 import com.dolph.blog.helpers.TimestampUtil;
+import com.dolph.blog.interfaces.UserProjection;
 import com.dolph.blog.models.Post;
+import com.dolph.blog.models.User;
 import com.dolph.blog.services.PostService;
+import com.dolph.blog.services.UserService;
 import com.dolph.blog.utils.ApiResponse;
 import com.dolph.blog.utils.FileUploader;
+import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -30,6 +33,8 @@ public class PostController {
     private  final FileUploader fileUploader;
 
     private final PostService postService;
+
+    private final UserService userService;
 
     @PostMapping
     @RequestMapping("/new")
@@ -161,7 +166,50 @@ public class PostController {
             return new ResponseEntity<>(r, HttpStatus.OK);
 
         }catch(Exception e){
-            ResponseBody r = response.catchHandler(e, "Error updating post: {} ");
+            ResponseBody r = response.catchHandler(e, "Error fetching post: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping
+    @RequestMapping("/query")
+    public ResponseEntity<ResponseBody> queryPost(@RequestParam() int limit,
+                                                  @RequestParam() int page,
+                                                  @RequestParam(required = false) String keyword,
+                                                  @RequestParam(required = false) String category){
+        ApiResponse response = new ApiResponse();
+
+        try{
+            List<Post> postList = postService.searchPosts(keyword, category, page, limit);
+
+            if(postList.isEmpty()){
+                ResponseBody r =response.failureResponse("there are no posts for this query", null);
+                return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
+            }
+
+            Map<String, Object> returnDoc = new HashMap<>();
+
+            List<Object> postDocs = new ArrayList<>();
+
+            Map<String, Object> postDoc = new HashMap<>();
+
+            for(Post post: postList){
+                Optional<User> user = userService.getUserById(post.getAuthorId());
+
+                if(user.isPresent()) {
+                    postDoc.put("post", post);
+                    postDoc.put("author", userService.mapUserToUserDTO(user.get()));
+                    postDocs.add(postDoc);
+                }
+            }
+
+            returnDoc.put("docs", postDocs);
+
+            ResponseBody r =response.successResponse("posts fetched",returnDoc);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+
+        }catch(Exception e){
+            ResponseBody r = response.catchHandler(e, "Error fetching post: {} ");
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -199,6 +247,27 @@ public class PostController {
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @DeleteMapping
+    @RequestMapping("/{id}")
+    public ResponseEntity<ResponseBody> deletePost(@PathVariable String id,
+                                                   @AuthenticationPrincipal String userId){
+        ApiResponse response = new ApiResponse();
+        try{
+            if(postService.deletePost(id, userId) == 0){
+                ResponseBody r = response.failureResponse("cannot delete post", null);
+                return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            ResponseBody r = response.successResponse("deleted post", null);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+        }catch (Exception e){
+            ResponseBody r = response.catchHandler(e, "Error deleting post: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
 
-// Todo: create likes, comments and develop swagger docs then deploy
+// Todo: create likes, comments and develop swagger docs then deploy, send mail after post was creted
+// TODO: write tests too
+// TODO: implement facebook oauth and github oauth
