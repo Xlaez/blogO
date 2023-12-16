@@ -4,8 +4,11 @@ import com.dolph.blog.dto.post.NewPostRequest;
 import com.dolph.blog.dto.post.UpdatePostRequest;
 import com.dolph.blog.dto.user.ResponseBody;
 import com.dolph.blog.helpers.TimestampUtil;
+import com.dolph.blog.interfaces.UserProjection;
 import com.dolph.blog.models.Post;
+import com.dolph.blog.models.User;
 import com.dolph.blog.services.PostService;
+import com.dolph.blog.services.UserService;
 import com.dolph.blog.utils.ApiResponse;
 import com.dolph.blog.utils.FileUploader;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,8 @@ public class PostController {
     private  final FileUploader fileUploader;
 
     private final PostService postService;
+
+    private final UserService userService;
 
     @PostMapping
     @RequestMapping("/new")
@@ -160,7 +165,7 @@ public class PostController {
             return new ResponseEntity<>(r, HttpStatus.OK);
 
         }catch(Exception e){
-            ResponseBody r = response.catchHandler(e, "Error updating post: {} ");
+            ResponseBody r = response.catchHandler(e, "Error fetching post: {} ");
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -183,13 +188,27 @@ public class PostController {
 
             Map<String, Object> returnDoc = new HashMap<>();
 
-            returnDoc.put("docs", postList);
+            List<Object> postDocs = new ArrayList<>();
 
-            ResponseBody r =response.successResponse("author's posts fetched",returnDoc);
+            Map<String, Object> postDoc = new HashMap<>();
+
+            for(Post post: postList){
+                Optional<User> user = userService.getUserById(post.getAuthorId());
+
+                if(user.isPresent()) {
+                    postDoc.put("post", post);
+                    postDoc.put("author", userService.mapUserToUserDTO(user.get()));
+                    postDocs.add(postDoc);
+                }
+            }
+
+            returnDoc.put("docs", postDocs);
+
+            ResponseBody r =response.successResponse("posts fetched",returnDoc);
             return new ResponseEntity<>(r, HttpStatus.OK);
 
         }catch(Exception e){
-            ResponseBody r = response.catchHandler(e, "Error updating post: {} ");
+            ResponseBody r = response.catchHandler(e, "Error fetching post: {} ");
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
