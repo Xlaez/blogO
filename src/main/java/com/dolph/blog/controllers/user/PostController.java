@@ -11,6 +11,7 @@ import com.dolph.blog.services.PostService;
 import com.dolph.blog.services.UserService;
 import com.dolph.blog.utils.ApiResponse;
 import com.dolph.blog.utils.FileUploader;
+import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -247,6 +248,26 @@ public class PostController {
         }
     }
 
+    @DeleteMapping
+    @RequestMapping("/{id}")
+    public ResponseEntity<ResponseBody> deletePost(@PathVariable String id,
+                                                   @AuthenticationPrincipal String userId){
+        ApiResponse response = new ApiResponse();
+        try{
+            if(postService.deletePost(id, userId) == 0){
+                ResponseBody r = response.failureResponse("cannot delete post", null);
+                return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            ResponseBody r = response.successResponse("deleted post", null);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+        }catch (Exception e){
+            ResponseBody r = response.catchHandler(e, "Error deleting post: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
 
 // Todo: create likes, comments and develop swagger docs then deploy, send mail after post was creted
+// TODO: write tests too
+// TODO: implement facebook oauth and github oauth
