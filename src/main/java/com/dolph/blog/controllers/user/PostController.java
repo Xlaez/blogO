@@ -1,7 +1,6 @@
 package com.dolph.blog.controllers.user;
 
 import com.dolph.blog.dto.post.NewPostRequest;
-import com.dolph.blog.dto.post.PostDataResponse;
 import com.dolph.blog.dto.post.UpdatePostRequest;
 import com.dolph.blog.dto.user.ResponseBody;
 import com.dolph.blog.helpers.TimestampUtil;
@@ -167,6 +166,35 @@ public class PostController {
     }
 
     @GetMapping
+    @RequestMapping("/query")
+    public ResponseEntity<ResponseBody> queryPost(@RequestParam() int limit,
+                                                  @RequestParam() int page,
+                                                  @RequestParam(required = false) String keyword,
+                                                  @RequestParam(required = false) String category){
+        ApiResponse response = new ApiResponse();
+
+        try{
+            List<Post> postList = postService.searchPosts(keyword, category, page, limit);
+
+            if(postList.isEmpty()){
+                ResponseBody r =response.failureResponse("there are no posts for this query", null);
+                return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
+            }
+
+            Map<String, Object> returnDoc = new HashMap<>();
+
+            returnDoc.put("docs", postList);
+
+            ResponseBody r =response.successResponse("author's posts fetched",returnDoc);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+
+        }catch(Exception e){
+            ResponseBody r = response.catchHandler(e, "Error updating post: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping
     @RequestMapping("/")
     public ResponseEntity<ResponseBody> getPostById(@RequestParam() String id){
         ApiResponse response = new ApiResponse();
@@ -199,6 +227,7 @@ public class PostController {
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 }
 
-// Todo: create likes, comments and develop swagger docs then deploy
+// Todo: create likes, comments and develop swagger docs then deploy, send mail after post was creted

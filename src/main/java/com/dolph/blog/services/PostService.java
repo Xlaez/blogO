@@ -14,8 +14,10 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -53,7 +55,7 @@ public class PostService {
         return Optional.ofNullable(post);
     }
 
-    public long deletePos(String id){
+    public long deletePost(String id){
         Query query = new Query(Criteria.where("_id").is(id));
         return mongoTemplate.remove(query, Post.class).getDeletedCount();
     }
@@ -65,6 +67,27 @@ public class PostService {
     public Page<Post> fetchUserPosts(String id,int page, int size){
         Pageable pageable = PageRequest.of(page, size);
         return postRepo.findByAuthorId(id, pageable);
+    }
+
+    public List<Post> searchPosts(@Nullable String keyword, @Nullable String category, int page, int size) {
+        Query query = new Query();
+
+        if (keyword != null && !keyword.isEmpty()) {
+            Criteria keywordCriteria = Criteria.where("title").regex(keyword, "i")
+                    .orOperator(Criteria.where("descr").regex(keyword, "i"));
+            query.addCriteria(keywordCriteria);
+        }
+
+        if (category != null && !category.isEmpty()) {
+            Criteria categoryCriteria = Criteria.where("category").is(category);
+            query.addCriteria(categoryCriteria);
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        query.with(pageable);
+
+        return mongoTemplate.find(query, Post.class);
     }
 
     public void sendEmail(String recipient, String subject, Map<String, Object> variables) throws MessagingException {
