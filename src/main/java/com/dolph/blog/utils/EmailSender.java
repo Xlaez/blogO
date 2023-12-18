@@ -41,4 +41,29 @@ public class EmailSender {
 
         javaMailSender.send(message);
     }
+
+    public void sendPostEmail(String to, String subject, Map<String, Object> variables) throws MessagingException {
+        MimeMessage message = javaMailSender.createMimeMessage();
+
+        message.setFrom(new InternetAddress(sender));
+        message.setRecipients(MimeMessage.RecipientType.TO, to);
+        message.setSubject(subject);
+
+        String body = "<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "<head>\n" +
+                "    <meta charset=\"UTF-8\">\n" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                "    <title>Article Posted</title>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "    <p>Hello <strong>" + variables.get("username") + "</strong>,</p>\n" +
+                "    <p>Your post <strong>" + variables.get("post") + "</strong> has been created!</p>\n" +
+                "    <p>Thank you for choosing BlogO,<br>Utibeabasi <BlogO C.E.O> </p>\n" +
+                "</body>\n" +
+                "</html>";
+        message.setContent(body, "text/html; charset=utf-8");
+
+        javaMailSender.send(message);
+    }
 }

@@ -1,4 +1,4 @@
-package com.dolph.blog.controllers.user;
+package com.dolph.blog.controllers.post;
 
 import com.dolph.blog.dto.post.NewPostRequest;
 import com.dolph.blog.dto.post.UpdatePostRequest;
@@ -64,6 +64,15 @@ public class PostController {
                 ResponseBody r =  response.failureResponse("cannot create post", null);
                 return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
             }
+
+            UserProjection user = userService.getUserByIdProjection(id);
+
+            Map<String, Object> variables = new HashMap<>();
+
+            variables.put("username", user.getFullname());
+            variables.put("post", newPostRequest.getTitle());
+
+            postService.sendEmail(user.getEmail(), "Post Created", variables);
 
             ResponseBody r =  response.successResponse("post created for: "+ postId, null);
             return new ResponseEntity<>(r, HttpStatus.CREATED);
@@ -268,6 +277,6 @@ public class PostController {
     }
 }
 
-// Todo: create likes, comments and develop swagger docs then deploy, send mail after post was creted
+// Todo: create likes, comments and develop swagger docs then deploy
 // TODO: write tests too
 // TODO: implement facebook oauth and github oauth
