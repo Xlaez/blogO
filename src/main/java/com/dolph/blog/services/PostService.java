@@ -95,6 +95,6 @@ public class PostService {
     }
 
     public void sendEmail(String recipient, String subject, Map<String, Object> variables) throws MessagingException {
-        emailSender.sendEmail(recipient, subject, variables);
+        emailSender.sendPostEmail(recipient, subject, variables);
     }
 }
