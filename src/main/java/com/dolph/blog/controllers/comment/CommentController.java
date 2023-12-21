@@ -1,7 +1,9 @@
 package com.dolph.blog.controllers.comment;
 
 import com.dolph.blog.dto.comment.NewCommentRequest;
+import com.dolph.blog.dto.comment.UpdateComment;
 import com.dolph.blog.dto.user.ResponseBody;
+import com.dolph.blog.helpers.TimestampUtil;
 import com.dolph.blog.models.Comment;
 import com.dolph.blog.models.User;
 import com.dolph.blog.services.CommentService;
@@ -153,6 +155,38 @@ public class CommentController {
 
         }catch(Exception e){
             ResponseBody r =response.catchHandler(e, "Error fetching replies: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping
+    @RequestMapping("/update")
+    public ResponseEntity<ResponseBody>updateComment(@RequestBody UpdateComment request, @AuthenticationPrincipal String userId){
+        ApiResponse response = new ApiResponse();
+
+        try{
+            Query query = new Query();
+            Criteria commentIdCriteria = Criteria.where("_id").is(request.getId());
+            Criteria userIdCriteria = Criteria.where("userId").is(userId);
+
+            query.addCriteria(commentIdCriteria);
+            query.addCriteria(userIdCriteria);
+
+            Update update = new Update();
+
+            update.set("text", request.getText());
+            update.set("updatedAt", TimestampUtil.getTimestamp());
+
+            if(commentService.updateComment(query, update).getModifiedCount() == 0){
+                ResponseBody r = response.failureResponse("cannot updated comment to post", null);
+                return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            ResponseBody r = response.successResponse("comment updated", null);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+
+        }catch (Exception e){
+            ResponseBody r = response.catchHandler(e, "Error creating comment: {} ");
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
