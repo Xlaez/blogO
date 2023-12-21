@@ -29,6 +29,7 @@ public class CommentService {
         public String createComment(com.dolph.blog.dto.comment.NewCommentRequest newCommentRequest){
             Comment comment = Comment.builder()
                     .postId(newCommentRequest.getPostId())
+                    .userId(newCommentRequest.getUserId())
                     .text(newCommentRequest.getText())
                     .createdAt(TimestampUtil.getTimestamp())
                     .updatedAt(TimestampUtil.getTimestamp())
