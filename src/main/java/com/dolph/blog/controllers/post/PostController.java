@@ -277,6 +277,6 @@ public class PostController {
     }
 }
 
-// Todo: create likes, comments and develop swagger docs then deploy
+// Todo: create likes and develop swagger docs then deploy
 // TODO: write tests too
 // TODO: implement facebook oauth and github oauth
