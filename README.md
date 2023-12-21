@@ -18,3 +18,5 @@ These are the current fields:
 - spring.cloudinary.apiKey=apikey
 - spring.servlet.multipart.max-file-size=3MB
 - spring.servlet.multipart.max-request-size=2MB
+- spring.github.clientId=clientId
+- spring.github.clientSecret=secret
