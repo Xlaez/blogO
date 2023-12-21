@@ -46,10 +46,17 @@ public class CommentService {
 
         public long deleteComment(String id, String userId){
             Query query = new Query();
+            Query query2 = new Query();
+
             Criteria commentIdCriteria = Criteria.where("_id").is(id);
             Criteria userIdCriteria = Criteria.where("userId").is(userId);
             query.addCriteria(commentIdCriteria);
             query.addCriteria(userIdCriteria);
+
+            Criteria parentIdCriteria = Criteria.where("parentId").is(id);
+            query2.addCriteria(parentIdCriteria);
+            mongoTemplate.remove(query2, Comment.class);
+
             return mongoTemplate.remove(query, Comment.class).getDeletedCount();
         }
 

@@ -186,7 +186,29 @@ public class CommentController {
             return new ResponseEntity<>(r, HttpStatus.OK);
 
         }catch (Exception e){
-            ResponseBody r = response.catchHandler(e, "Error creating comment: {} ");
+            ResponseBody r = response.catchHandler(e, "Error updating comment: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    @DeleteMapping
+    @RequestMapping("/{id}")
+    public ResponseEntity<ResponseBody>deleteComment(@PathVariable("id") String id,
+                                                     @AuthenticationPrincipal String userId){
+        ApiResponse response = new ApiResponse();
+
+        try{
+            if(commentService.deleteComment(id, userId) == 0) {
+                ResponseBody r = response.failureResponse("cannot deleted comment", null);
+                return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            ResponseBody r = response.successResponse("comment deleted", null);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+
+        }catch (Exception e){
+            ResponseBody r = response.catchHandler(e, "Error deleting comment: {} ");
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
