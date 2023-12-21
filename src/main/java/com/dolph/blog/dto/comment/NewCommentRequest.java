@@ -16,5 +16,6 @@ public class NewCommentRequest {
     private String id;
     private String text;
     private String userId;
+    private String parentId;
     private String postId;
 }

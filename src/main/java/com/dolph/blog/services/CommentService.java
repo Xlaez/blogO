@@ -31,6 +31,7 @@ public class CommentService {
                     .postId(newCommentRequest.getPostId())
                     .userId(newCommentRequest.getUserId())
                     .text(newCommentRequest.getText())
+                    .parentId(newCommentRequest.getParentId() != null ? newCommentRequest.getParentId() : null)
                     .createdAt(TimestampUtil.getTimestamp())
                     .updatedAt(TimestampUtil.getTimestamp())
                     .build();
@@ -59,5 +60,10 @@ public class CommentService {
         public Page<Comment> fetchComments(String id, int page, int size){
             Pageable pageable = PageRequest.of(page, size);
             return  commentRepo.findByPostId(id, pageable);
+        }
+
+        public Page<Comment> fetchReplies(String id, int page, int size){
+            Pageable pageable = PageRequest.of(page, size);
+            return commentRepo.findByParentId(id, pageable);
         }
 }

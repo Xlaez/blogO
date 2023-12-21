@@ -8,4 +8,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 public interface CommentRepo extends MongoRepository<Comment, String> {
     Page<Comment> findAll(Pageable pageable);
     Page<Comment> findByPostId(String postId, Pageable pageable);
+    Page<Comment> findByParentId(String parentId, Pageable pageable);
 }

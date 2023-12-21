@@ -9,6 +9,9 @@ import com.dolph.blog.services.UserService;
 import com.dolph.blog.utils.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,16 +28,28 @@ public class CommentController {
 
     @PostMapping
     @RequestMapping("/new")
-    public ResponseEntity<ResponseBody>createPost(@RequestBody NewCommentRequest request, @AuthenticationPrincipal String userId){
+    public ResponseEntity<ResponseBody>createComment(@RequestBody NewCommentRequest request, @AuthenticationPrincipal String userId){
         ApiResponse response = new ApiResponse();
 
         try{
             request.setUserId(userId);
+
             String id = commentService.createComment(request);
 
-            if(id.isEmpty()){
+            if(id == null){
                 ResponseBody r = response.failureResponse("cannot add comment to post", null);
                 return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            if(request.getParentId() != null){
+                Query query = new Query(Criteria.where("_id").is(request.getParentId()));
+                Update update = new Update();
+                update.inc("replyCount", 1);
+
+                if(commentService.updateComment(query, update).getModifiedCount() == 0){
+                    ResponseBody r =response.failureResponse("cannot add reply", null);
+                    return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+                }
             }
 
             ResponseBody r = response.successResponse("comment added", null);
@@ -48,7 +63,7 @@ public class CommentController {
 
     @GetMapping
     @RequestMapping("/all")
-    public ResponseEntity<ResponseBody>createPost(@RequestParam() int page,
+    public ResponseEntity<ResponseBody>getComments(@RequestParam() int page,
                                                   @RequestParam() int limit,
                                                   @RequestParam() String postId) {
         ApiResponse response = new ApiResponse();
@@ -70,13 +85,15 @@ public class CommentController {
             Map<String, Object> commentDoc = new HashMap<>();
 
             for(Comment comment: commentList){
-                Optional<User> user = userService.getUserById(comment.getUserId());
+               if(comment.getParentId() == null){
+                   Optional<User> user = userService.getUserById(comment.getUserId());
 
-                if(user.isPresent()){
-                    commentDoc.put("comment", comment);
-                    commentDoc.put("author", userService.mapUserToUserDTO(user.get()));
-                    commentDocs.add(commentDoc);
-                }
+                   if(user.isPresent()){
+                       commentDoc.put("comment", comment);
+                       commentDoc.put("author", userService.mapUserToUserDTO(user.get()));
+                       commentDocs.add(commentDoc);
+                   }
+               }
             }
 
             returnDoc.put("docs", commentDocs);
@@ -89,6 +106,53 @@ public class CommentController {
 
         }catch(Exception e){
             ResponseBody r =response.catchHandler(e, "Error fetching comments: {} ");
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping
+    @RequestMapping("/{commentId}/replies")
+    public ResponseEntity<ResponseBody>getReplies(@RequestParam() int page,
+                                                   @RequestParam() int limit,
+                                                   @PathVariable("commentId") String id) {
+        ApiResponse response = new ApiResponse();
+
+        try{
+            Page<Comment> comments = commentService.fetchReplies(id, page, limit);
+
+            List<Comment> commentList = comments.getContent();
+
+            if(commentList.isEmpty()){
+                ResponseBody r =response.failureResponse("there are no comments yet", null);
+                return new ResponseEntity<>(r, HttpStatus.NOT_FOUND);
+            }
+
+            Map<String, Object> returnDoc = new HashMap<>();
+
+            List<Object> commentDocs = new ArrayList<>();
+
+            Map<String, Object> commentDoc = new HashMap<>();
+
+            for(Comment comment: commentList){
+                    Optional<User> user = userService.getUserById(comment.getUserId());
+
+                    if(user.isPresent()){
+                        commentDoc.put("comment", comment);
+                        commentDoc.put("author", userService.mapUserToUserDTO(user.get()));
+                        commentDocs.add(commentDoc);
+                    }
+            }
+
+            returnDoc.put("docs", commentDocs);
+            returnDoc.put("hasNextPage", comments.hasNext());
+            returnDoc.put("totalComments", comments.getNumberOfElements());
+            returnDoc.put("totalPages", comments.getTotalPages());
+
+            ResponseBody r = response.successResponse("replies fetched successfully", returnDoc);
+            return new ResponseEntity<>(r, HttpStatus.OK);
+
+        }catch(Exception e){
+            ResponseBody r =response.catchHandler(e, "Error fetching replies: {} ");
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
